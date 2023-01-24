@@ -35,6 +35,8 @@ def scrape(url: str, limit: int, trial: int):
         for item in items:
             a_els.append(item.find("a"))
         for a in a_els:
+            if a is None:
+                continue
             url = a.get("href")
             if image_els.get(url) is None:
                 no_more_new = False
