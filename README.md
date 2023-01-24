@@ -9,3 +9,6 @@ pip install -r requirements.txt
 ```bash
 python ./scrape.py "What you want" --limit 1000 --batch_size 20 --output ./output.json
 ```
+# Pre-collected dataset
+
+https://huggingface.co/datasets/p1atdev/pinterest
