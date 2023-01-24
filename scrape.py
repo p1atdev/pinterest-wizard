@@ -7,6 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 import json
 import requests
 from concurrent.futures import ThreadPoolExecutor
+import time
 
 base = "https://www.pinterest.com"
 
@@ -56,22 +57,31 @@ def scrape(url: str, limit: int, trial: int):
         # scroll down
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
+        time.sleep(1.5)
+
+        
+
     driver.quit()
 
     return list(image_els.values())[:limit]
 
 def scrape_detail_tags(url: str):
-    r = requests.get(url)
-    soup = BeautifulSoup(r.text, "html.parser")
+    try:
+        r = requests.get(url)
 
-    closeup_detail = soup.find("div", {"data-test-id": "CloseupDetails"})
-    vase_tags = closeup_detail.find_all("div", {"data-test-id": "vase-tag"})
+        soup = BeautifulSoup(r.text, "html.parser")
 
-    tags = []
-    for tag in vase_tags:
-        tags.append(tag.find("span").text)
-    
-    return tags
+        closeup_detail = soup.find("div", {"data-test-id": "CloseupDetails"})
+        vase_tags = closeup_detail.find_all("div", {"data-test-id": "vase-tag"})
+
+        tags = []
+        for tag in vase_tags:
+            tags.append(tag.find("span").text)
+        
+        return tags
+    except:
+        # retry
+        return scrape_detail_tags(url)
 
 def scrape_detail_tags_multi_wrapper(r):
     print(f"Detail data fetched: {r['url']}")
@@ -120,7 +130,7 @@ if __name__ == "__main__":
     parser.add_argument("query", help="Search keyword")
     parser.add_argument("--limit", help="Limit the number of images to scrape", default=30)
     parser.add_argument("--output", help="Output file name", default="output.json")
-    parser.add_argument("--trial", help="Number of trials to check if there are no more new images", default=100)
+    parser.add_argument("--trial", help="Number of trials to check if there are no more new images", default=10)
     parser.add_argument("--batch_size", help="Batch size for fetching detail data", default=100)
     args = parser.parse_args()
     __main__(args.query, args.limit, args.output, args.trial, args.batch_size)
