@@ -2,7 +2,7 @@ import argparse
 import requests
 import json
 from concurrent.futures import ThreadPoolExecutor
-
+import os
 
 def download(image, output, caption_ext):
     url = image["src"]
@@ -10,11 +10,13 @@ def download(image, output, caption_ext):
     filename = url.split("/")[-1]
     [filename, img_ext] = filename.split(".")
 
-    img = requests.get(url, stream=True)
-    if img.status_code == 200:
-        with open(output + "/" + filename + "." + img_ext, "wb") as f:
-            for chunk in img:
-                f.write(chunk)
+    img = requests.get(url)
+    if img.status_code != 200:
+        url = url.replace("originals", "736x")
+        img = requests.get(url)
+        
+    with open(output + "/" + filename + "." + img_ext, "wb") as f:
+        f.write(img.content)
 
     with open(output + "/" + filename + "." + caption_ext, "w", encoding="utf-8") as f:
         f.write(", ".join(tags))
@@ -30,13 +32,13 @@ def __main__(input, limit, output, batch_size, caption_ext):
     if limit:
         result = result[:limit]
 
+    if not os.path.exists(output):
+        os.makedirs(output)
+
     with ThreadPoolExecutor(max_workers=batch_size) as executor:
         executor.map(download, result, [output] * len(result), [caption_ext] * len(result), chunksize=batch_size)
     
     print("Done! Downloaded", len(result), "images to", output, "with caption extension", f".{caption_ext}")
-
-
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scrape Pinterest")
