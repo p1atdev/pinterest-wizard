@@ -121,7 +121,7 @@ def __main__(query, limit, output, trial, batch_size):
     with open(output, "w", encoding="utf-8") as f:
         f.write(text.replace("\\u2029", "\\n"))
 
-    print("Done!")
+    print("Done!", len(result), "images saved to", output)
 
 
 
