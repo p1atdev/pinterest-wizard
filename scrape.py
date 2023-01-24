@@ -44,7 +44,7 @@ def scrape(url: str, limit: int, trial: int):
                 image_els[url] = {
                     "url": base + url,
                     "alt": img_el.get("alt"),
-                    "src": img_el.get("src").replace("236x", "originals")
+                    "src": img_el.get("src").replace("236x", "736x")
                 }
 
         print("Current:", len(image_els))
@@ -61,8 +61,6 @@ def scrape(url: str, limit: int, trial: int):
 
         time.sleep(1.5)
 
-        
-
     driver.quit()
 
     return list(image_els.values())[:limit]
@@ -75,19 +73,41 @@ def scrape_detail_tags(url: str):
 
         closeup_detail = soup.find("div", {"data-test-id": "CloseupDetails"})
         vase_tags = closeup_detail.find_all("div", {"data-test-id": "vase-tag"})
+        closeup_image = soup.find("div", {"data-test-id": "pin-closeup-image"})
+        
+        if closeup_image is None:
+            # video
+            closeup_body = soup.find("div", {"data-layout-shift-boundary-id": "CloseupPageBody"})
+            img_src = closeup_body.find("video")
+            if img_src is not None:
+                img_src = img_src.get("poster")
+            else:
+                img_src = None
+                
+        else:
+            img_el = closeup_image.find("img", {"elementtiming": "closeupImage"})
+            img_src = img_el.get("src")
 
         tags = []
         for tag in vase_tags:
             tags.append(tag.find("span").text)
         
-        return tags
-    except:
+        return {
+            "tags": tags,
+            "src": img_src
+        }
+    except Exception as e:
         # retry
+        print("Error:", e, url)
         return scrape_detail_tags(url)
 
 def scrape_detail_tags_multi_wrapper(r):
     print(f"Detail data fetched: {r['url']}")
-    r["tags"] = scrape_detail_tags(r["url"])
+    detail = scrape_detail_tags(r["url"])
+    r["tags"] = detail["tags"]
+    if detail["src"] is not None:
+        r["src"] = detail["src"]
+    # print(r)
     return r
 
 def fetch_detail_data(result, batch_size):
