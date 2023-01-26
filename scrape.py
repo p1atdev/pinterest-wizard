@@ -72,21 +72,30 @@ def scrape_detail_tags(url: str):
         soup = BeautifulSoup(r.text, "html.parser")
 
         closeup_detail = soup.find("div", {"data-test-id": "CloseupDetails"})
-        vase_tags = closeup_detail.find_all("div", {"data-test-id": "vase-tag"})
-        closeup_image = soup.find("div", {"data-test-id": "pin-closeup-image"})
-        
-        if closeup_image is None:
-            # video
-            closeup_body = soup.find("div", {"data-layout-shift-boundary-id": "CloseupPageBody"})
-            img_src = closeup_body.find("video")
+        if closeup_detail is not None:
+            vase_tags = closeup_detail.find_all("div", {"data-test-id": "vase-tag"})
+            closeup_image = soup.find("div", {"data-test-id": "pin-closeup-image"})
+            
+            if closeup_image is None:
+                # video
+                closeup_body = soup.find("div", {"data-layout-shift-boundary-id": "CloseupPageBody"})
+                img_src = closeup_body.find("video")
+                if img_src is not None:
+                    img_src = img_src.get("poster")
+                else:
+                    img_src = None
+                    
+            else:
+                img_el = closeup_image.find("img", {"elementtiming": "closeupImage"})
+                img_src = img_el.get("src")
+        else:
+            closeup_page_container = soup.find("div", {"data-layout-shift-boundary-id": "CloseupPageContainer"})
+            vase_tags = closeup_page_container.find_all("div", {"data-test-id": "vase-tag"})
+            img_src = closeup_page_container.find("video")
             if img_src is not None:
                 img_src = img_src.get("poster")
             else:
                 img_src = None
-                
-        else:
-            img_el = closeup_image.find("img", {"elementtiming": "closeupImage"})
-            img_src = img_el.get("src")
 
         tags = []
         for tag in vase_tags:
